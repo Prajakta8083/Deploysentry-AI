@@ -1,0 +1,42 @@
+# DeploySentry AI — Policy Rules
+# Rules are checked in order, top to bottom.
+# The FIRST matching rule decides the outcome — so specific rules go first,
+# and a catch-all "Default" rule goes last.
+#
+# action must be one of: APPROVE, REVIEW, BLOCK
+
+rules:
+  - name: "Critical path protection"
+    description: "Changes touching auth or payments need human review"
+    condition: "touches_critical_path"
+    action: "REVIEW"
+
+  - name: "Direct push to main"
+    description: "Code pushed straight to main without a pull request is blocked"
+    condition: "direct_push_to_main"
+    action: "BLOCK"
+
+  - name: "Large changeset"
+    description: "Big changes are harder to review safely — flag them"
+    condition: "large_changeset"
+    action: "REVIEW"
+
+  - name: "Off-hours deployment"
+    description: "Deploys outside working hours get flagged for review"
+    condition: "off_hours"
+    action: "REVIEW"
+
+  - name: "Default"
+    description: "Anything that didn't match a riskier rule is approved"
+    condition: "always"
+    action: "APPROVE"
+
+# Thresholds used by the conditions above
+settings:
+  large_changeset_lines: 500
+  business_hours_start: 9
+  business_hours_end: 18
+  critical_paths:
+    - "auth/"
+    - "payments/"
+    - "billing/"

@@ -1,0 +1,14 @@
+# Service = a stable network address that always points to your running pods,
+# even if individual pods restart or get replaced.
+apiVersion: v1
+kind: Service
+metadata:
+  name: deploysentry-service
+spec:
+  selector:
+    app: deploysentry-ai
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8090
+  type: ClusterIP   # internal access; change to LoadBalancer for external access

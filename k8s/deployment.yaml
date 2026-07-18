@@ -1,0 +1,35 @@
+# Deployment = "keep this many copies of my container running, always"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploysentry-ai
+  labels:
+    app: deploysentry-ai
+spec:
+  replicas: 2   # run 2 copies for reliability (if one crashes, the other keeps serving)
+  selector:
+    matchLabels:
+      app: deploysentry-ai
+  template:
+    metadata:
+      labels:
+        app: deploysentry-ai
+    spec:
+      containers:
+        - name: deploysentry-ai
+          image: deploysentry-ai:latest   # built from your Dockerfile
+          ports:
+            - containerPort: 8090
+          env:
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: deploysentry-secrets
+                  key: gemini-api-key
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"

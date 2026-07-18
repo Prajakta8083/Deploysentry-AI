@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.venv/
+
+# Environment variables / secrets - NEVER commit these
+.env
+env
+*.env
+
+# Database (local audit data - shouldn't be in version control)
+audit_logs.db
+*.db
+*.sqlite3
+
+# OS / editor junk
+.DS_Store
+.vscode/settings.json
+
+# Docker
+*.log
+
+# Kubernetes secrets (if you ever export any locally)
+*.secret.yaml
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# VS Code
+.vscode/
