@@ -8,13 +8,15 @@ instead of running Python scripts directly.
 
 import sqlite3
 from typing import List, Optional
-
+from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from policy_engine import PolicyEngine, ChangeRequest
 from database import init_db, save_log
+import sqlite3
+from fastapi.staticfiles import StaticFiles
 
 
 app = FastAPI(title="DeploySentry AI", version="1.0.0")
@@ -41,10 +43,6 @@ class ChangeRequestInput(BaseModel):
     deploy_hour: Optional[int] = None  # if omitted, uses current server time
 
 
-@app.get("/")
-def health_check():
-    return {"status": "ok", "service": "deploysentry-ai"}
-
 
 @app.post("/evaluate")
 def evaluate_change(payload: ChangeRequestInput):
@@ -70,6 +68,41 @@ def evaluate_change(payload: ChangeRequestInput):
     )
 
     return result
+
+# ── 2. YOUR HEALTH CHECK ROUTE SHOULD NOW LOOK LIKE THIS ──
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "service": "deploysentry-ai"}
+
+
+# ── 3. ADD THIS NEW ROUTE ANYWHERE AMONG YOUR OTHER @app.get/@app.post ROUTES ──
+@app.get("/analytics/summary")
+def analytics_summary():
+    conn = sqlite3.connect("audit_logs.db")
+    cursor = conn.cursor()
+
+    # 🔧 change "decision" below to your actual column name if different
+    cursor.execute("""
+        SELECT decision, COUNT(*) as count
+        FROM audit_logs
+        GROUP BY decision
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+
+    summary = {"APPROVE": 0, "REVIEW": 0, "BLOCK": 0}
+    for decision, count in rows:
+        if decision in summary:
+            summary[decision] = count
+
+    total = sum(summary.values())
+    return {"summary": summary, "total": total}
+
+
+# ── 4. THIS MUST BE THE ABSOLUTE LAST LINE IN main.py ──
+# Serves index.html (sitting in your project root) at http://localhost:8090/
+# It must come AFTER every other @app.get / @app.post route, otherwise it
+# will intercept requests meant for /evaluate, /audit-logs, /health, etc.
 
 
 @app.get("/audit-logs")
@@ -105,3 +138,5 @@ def get_audit_logs():
         })
 
     return logs
+
+app.mount("/", StaticFiles(directory=".", html=True), name="frontend")
